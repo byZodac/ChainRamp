@@ -10,7 +10,7 @@ struct Project {
     location: String,
     max_whitelisted_addresses: u64,
     num_addresses_whitelisted: u64,
-    creator: Address,  // Changed from AccountAddress to Address
+    creator: Address, 
 }
 
 #[derive(Serialize, SchemaType, Clone)]
@@ -92,7 +92,6 @@ fn add_address_to_whitelist<S: HasStateApi>(
     let state = host.state_mut();
 
     // Ensure the project exists and make it mutable
-     // Ensure the project exists and make it mutable
     let project = state.projects.get_mut(&params.project_id).ok_or(CustomContractError::ProjectNotFound)?;
 
     // Ensure the sender is not the creator and that the whitelist is not full
