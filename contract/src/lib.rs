@@ -77,8 +77,15 @@ fn create_project<S: HasStateApi>(
         creator: ctx.sender(),
     };
 
-    state.projects.insert(project_id, project);
-    state.whitelists.insert(project_id, Vec::new());
+    // Insert the project and check if a project with this ID already existed (which it shouldn't)
+    if state.projects.insert(project_id, project).is_some() {
+        return Err(CustomContractError::ProjectAlreadyExists);
+    }
+
+    // Insert the empty whitelist and check if a whitelist for this project ID already existed
+    if state.whitelists.insert(project_id, Vec::new()).is_some() {
+        return Err(CustomContractError::WhitelistAlreadyExists);
+    }
 
     Ok(())
 }
@@ -86,21 +93,20 @@ fn create_project<S: HasStateApi>(
 #[receive(contract = "project_whitelist", name = "add_address_to_whitelist", parameter = "AddToWhitelistParams", mutable)]
 fn add_address_to_whitelist<S: HasStateApi>(
     ctx: &impl HasReceiveContext,
-    host: &mut impl HasHost<State<S>>,
+    host: &mut impl HasHost<State<S>, StateApiType = S>,
 ) -> Result<(), CustomContractError> {
     let params: AddToWhitelistParams = ctx.parameter_cursor().get().map_err(|_| CustomContractError::ParseError)?;
     let state = host.state_mut();
 
     // Ensure the project exists and make it mutable
-    let project = state.projects.get_mut(&params.project_id).ok_or(CustomContractError::ProjectNotFound)?;
+    let mut project = state.projects.get_mut(&params.project_id).ok_or(CustomContractError::ProjectNotFound)?;
 
     // Ensure the sender is not the creator and that the whitelist is not full
     ensure!(ctx.sender() != project.creator, CustomContractError::CreatorCannotJoin);
     ensure!(project.num_addresses_whitelisted < project.max_whitelisted_addresses, CustomContractError::WhitelistClosed);
 
     // Get the whitelist, make it mutable, and ensure the sender is not already whitelisted
-    let whitelist = state.whitelists.get_mut(&params.project_id).ok_or(CustomContractError::WhitelistNotFound)?;
-    let whitelist = whitelist.as_mut();
+    let mut whitelist = state.whitelists.get_mut(&params.project_id).ok_or(CustomContractError::WhitelistNotFound)?;
     ensure!(!whitelist.contains(&ctx.sender()), CustomContractError::AlreadyWhitelisted);
 
     // Add the sender to the whitelist and update the project
@@ -156,14 +162,14 @@ fn get_project_details<S: HasStateApi>(
 #[receive(contract = "project_whitelist", name = "get_all_projects", return_value = "Vec<ProjectInfo>")]
 fn get_all_projects<S: HasStateApi>(
     _ctx: &impl HasReceiveContext,
-    host: &impl HasHost<State<S>>,
+    host: &impl HasHost<State<S>, StateApiType = S>,
 ) -> Result<Vec<ProjectInfo>, CustomContractError> {
     let state = host.state();
     let mut all_projects = Vec::new();
 
     // Iterate through all projects and collect their details
     for (project_id, project) in state.projects.iter() {
-        let whitelist = state.whitelists.get(project_id).ok_or(CustomContractError::WhitelistNotFound)?;
+        let whitelist = state.whitelists.get(&*project_id).ok_or(CustomContractError::WhitelistNotFound)?;
         let remaining_spots = project.max_whitelisted_addresses - project.num_addresses_whitelisted;
         let is_whitelist_closed = remaining_spots == 0;
 
@@ -220,4 +226,6 @@ enum CustomContractError {
     AlreadyWhitelisted,
     WhitelistClosed,
     Unauthorized,
+    ProjectAlreadyExists,
+    WhitelistAlreadyExists
 }
