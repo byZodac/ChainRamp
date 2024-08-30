@@ -1,5 +1,6 @@
 use concordium_std::*;
 use core::fmt::Debug;
+use std::collections::BTreeMap;
 
 // Structs
 
@@ -10,7 +11,7 @@ struct Project {
     location: String,
     max_whitelisted_addresses: u64,
     num_addresses_whitelisted: u64,
-    creator: Address, 
+    creator: Address,
 }
 
 #[derive(Serialize, SchemaType, Clone)]
@@ -21,48 +22,43 @@ struct ProjectInfo {
     location: String,
     max_whitelisted_addresses: u64,
     num_addresses_whitelisted: u64,
-    creator: Address,  
-    whitelisted_addresses: Vec<Address>, 
+    creator: Address,
+    whitelisted_addresses: Vec<Address>,
     remaining_whitelist_spots: u64,
     is_whitelist_closed: bool,
 }
 
 // Contract State
 
-#[derive(Serial, DeserialWithState)]
-#[concordium(state_parameter = "S")]
-struct State<S: HasStateApi> {
-    projects: StateMap<u64, Project, S>,
+#[derive(Serialize, Clone, SchemaType)]
+struct State {
+    projects: BTreeMap<u64, Project>,
     project_count: u64,
-    whitelists: StateMap<u64, Vec<Address>, S>,  
-}
-
-impl<S: HasStateApi> State<S> {
-    fn new(state_builder: &mut StateBuilder<S>) -> Self {
-        State {
-            projects: state_builder.new_map(),
-            project_count: 0,
-            whitelists: state_builder.new_map(),
-        }
-    }
+    whitelists: BTreeMap<u64, Vec<Address>>,
 }
 
 // Contract Functions
 
 #[init(contract = "project_whitelist")]
-fn init<S: HasStateApi>(
-    _ctx: &InitContext,
-    state_builder: &mut StateBuilder<S>,
-) -> InitResult<State<S>> {
-    Ok(State::new(state_builder))
+fn init(_ctx: &InitContext, _state_builder: &mut StateBuilder) -> InitResult<State> {
+    Ok(State {
+        projects: BTreeMap::new(),
+        project_count: 0,
+        whitelists: BTreeMap::new(),
+    })
 }
 
-#[receive(contract = "project_whitelist", name = "create_project", parameter = "CreateProjectParams", mutable)]
-fn create_project<S: HasStateApi>(
-    ctx: &ReceiveContext,
-    host: &mut impl HasHost<State<S>>,
-) -> Result<(), CustomContractError> {
-    let params: CreateProjectParams = ctx.parameter_cursor().get().map_err(|_| CustomContractError::ParseError)?;
+#[receive(
+    contract = "project_whitelist",
+    name = "create_project",
+    parameter = "CreateProjectParams",
+    mutable
+)]
+fn create_project(ctx: &ReceiveContext, host: &mut Host<State>) -> Result<(), CustomContractError> {
+    let params: CreateProjectParams = ctx
+        .parameter_cursor()
+        .get()
+        .map_err(|_| CustomContractError::ParseError)?;
     let state = host.state_mut();
 
     state.project_count += 1;
@@ -78,36 +74,62 @@ fn create_project<S: HasStateApi>(
     };
 
     // Insert the project and check if a project with this ID already existed (which it shouldn't)
-    if state.projects.insert(project_id, project).is_some() {
-        return Err(CustomContractError::ProjectAlreadyExists);
-    }
+    // if state.projects.insert(project_id, project).is_some() {
+    //     return Err(CustomContractError::ProjectAlreadyExists);
+    // }
 
-    // Insert the empty whitelist and check if a whitelist for this project ID already existed
-    if state.whitelists.insert(project_id, Vec::new()).is_some() {
-        return Err(CustomContractError::WhitelistAlreadyExists);
-    }
+    state.projects.entry(project_id).or_insert(project);
+
+    // // Insert the empty whitelist and check if a whitelist for this project ID already existed
+    // if state.whitelists.insert(project_id, Vec::new()).is_some() {
+    //     return Err(CustomContractError::WhitelistAlreadyExists);
+    // }
+    state.whitelists.entry(project_id).or_insert(Vec::new());
 
     Ok(())
 }
 
-#[receive(contract = "project_whitelist", name = "add_address_to_whitelist", parameter = "AddToWhitelistParams", mutable)]
-fn add_address_to_whitelist<S: HasStateApi>(
-    ctx: &impl HasReceiveContext,
-    host: &mut impl HasHost<State<S>, StateApiType = S>,
+#[receive(
+    contract = "project_whitelist",
+    name = "add_address_to_whitelist",
+    parameter = "ProjectId",
+    mutable
+)]
+fn add_address_to_whitelist(
+    ctx: &ReceiveContext,
+    host: &mut Host<State>,
 ) -> Result<(), CustomContractError> {
-    let params: AddToWhitelistParams = ctx.parameter_cursor().get().map_err(|_| CustomContractError::ParseError)?;
+    let project_id: ProjectId = ctx
+        .parameter_cursor()
+        .get()
+        .map_err(|_| CustomContractError::ParseError)?;
     let state = host.state_mut();
 
     // Ensure the project exists and make it mutable
-    let mut project = state.projects.get_mut(&params.project_id).ok_or(CustomContractError::ProjectNotFound)?;
+    let project = state
+        .projects
+        .get_mut(&project_id)
+        .ok_or(CustomContractError::ProjectNotFound)?;
 
     // Ensure the sender is not the creator and that the whitelist is not full
-    ensure!(ctx.sender() != project.creator, CustomContractError::CreatorCannotJoin);
-    ensure!(project.num_addresses_whitelisted < project.max_whitelisted_addresses, CustomContractError::WhitelistClosed);
+    ensure!(
+        ctx.sender() != project.creator,
+        CustomContractError::CreatorCannotJoin
+    );
+    ensure!(
+        project.num_addresses_whitelisted < project.max_whitelisted_addresses,
+        CustomContractError::WhitelistClosed
+    );
 
     // Get the whitelist, make it mutable, and ensure the sender is not already whitelisted
-    let mut whitelist = state.whitelists.get_mut(&params.project_id).ok_or(CustomContractError::WhitelistNotFound)?;
-    ensure!(!whitelist.contains(&ctx.sender()), CustomContractError::AlreadyWhitelisted);
+    let whitelist = state
+        .whitelists
+        .get_mut(&project_id)
+        .ok_or(CustomContractError::WhitelistNotFound)?;
+    ensure!(
+        !whitelist.contains(&ctx.sender()),
+        CustomContractError::AlreadyWhitelisted
+    );
 
     // Add the sender to the whitelist and update the project
     whitelist.push(ctx.sender());
@@ -116,37 +138,61 @@ fn add_address_to_whitelist<S: HasStateApi>(
     Ok(())
 }
 
-
-#[receive(contract = "project_whitelist", name = "get_whitelisted_addresses", parameter = "GetWhitelistParams", return_value = "Vec<Address>")]
-fn get_whitelisted_addresses<S: HasStateApi>(
-    ctx: &impl HasReceiveContext,
-    host: &impl HasHost<State<S>>,
+#[receive(
+    contract = "project_whitelist",
+    name = "get_whitelisted_addresses",
+    parameter = "ProjectId",
+    return_value = "Vec<Address>"
+)]
+fn get_whitelisted_addresses(
+    ctx: &ReceiveContext,
+    host: &Host<State>,
 ) -> Result<Vec<Address>, CustomContractError> {
-    let params: GetWhitelistParams = ctx.parameter_cursor().get().map_err(|_| CustomContractError::ParseError)?;
+    let project_id: ProjectId = ctx
+        .parameter_cursor()
+        .get()
+        .map_err(|_| CustomContractError::ParseError)?;
     let state = host.state();
 
     // Retrieve the whitelist and return it
-    let whitelist = state.whitelists.get(&params.project_id).ok_or(CustomContractError::WhitelistNotFound)?;
+    let whitelist = state
+        .whitelists
+        .get(&project_id)
+        .ok_or(CustomContractError::WhitelistNotFound)?;
     Ok(whitelist.clone())
 }
 
-#[receive(contract = "project_whitelist", name = "get_project_details", parameter = "GetProjectParams", return_value = "ProjectInfo")]
-fn get_project_details<S: HasStateApi>(
-    ctx: &impl HasReceiveContext,
-    host: &impl HasHost<State<S>>,
+#[receive(
+    contract = "project_whitelist",
+    name = "get_project_details",
+    parameter = "ProjectId",
+    return_value = "ProjectInfo"
+)]
+fn get_project_details(
+    ctx: &ReceiveContext,
+    host: &Host<State>,
 ) -> Result<ProjectInfo, CustomContractError> {
-    let params: GetProjectParams = ctx.parameter_cursor().get().map_err(|_| CustomContractError::ParseError)?;
+    let project_id: ProjectId = ctx
+        .parameter_cursor()
+        .get()
+        .map_err(|_| CustomContractError::ParseError)?;
     let state = host.state();
 
     // Retrieve project and whitelist, then construct the project info
-    let project = state.projects.get(&params.project_id).ok_or(CustomContractError::ProjectNotFound)?;
-    let whitelist = state.whitelists.get(&params.project_id).ok_or(CustomContractError::WhitelistNotFound)?;
+    let project = state
+        .projects
+        .get(&project_id)
+        .ok_or(CustomContractError::ProjectNotFound)?;
+    let whitelist = state
+        .whitelists
+        .get(&project_id)
+        .ok_or(CustomContractError::WhitelistNotFound)?;
 
     let remaining_spots = project.max_whitelisted_addresses - project.num_addresses_whitelisted;
     let is_whitelist_closed = remaining_spots == 0;
 
     Ok(ProjectInfo {
-        project_id: params.project_id,
+        project_id,
         name: project.name.clone(),
         description: project.description.clone(),
         location: project.location.clone(),
@@ -159,17 +205,24 @@ fn get_project_details<S: HasStateApi>(
     })
 }
 
-#[receive(contract = "project_whitelist", name = "get_all_projects", return_value = "Vec<ProjectInfo>")]
-fn get_all_projects<S: HasStateApi>(
-    _ctx: &impl HasReceiveContext,
-    host: &impl HasHost<State<S>, StateApiType = S>,
+#[receive(
+    contract = "project_whitelist",
+    name = "get_all_projects",
+    return_value = "Vec<ProjectInfo>"
+)]
+fn get_all_projects(
+    _ctx: &ReceiveContext,
+    host: &Host<State>,
 ) -> Result<Vec<ProjectInfo>, CustomContractError> {
     let state = host.state();
     let mut all_projects = Vec::new();
 
     // Iterate through all projects and collect their details
     for (project_id, project) in state.projects.iter() {
-        let whitelist = state.whitelists.get(&*project_id).ok_or(CustomContractError::WhitelistNotFound)?;
+        let whitelist = state
+            .whitelists
+            .get(&*project_id)
+            .ok_or(CustomContractError::WhitelistNotFound)?;
         let remaining_spots = project.max_whitelisted_addresses - project.num_addresses_whitelisted;
         let is_whitelist_closed = remaining_spots == 0;
 
@@ -200,20 +253,7 @@ struct CreateProjectParams {
     max_whitelisted_addresses: u64,
 }
 
-#[derive(Serialize, SchemaType)]
-struct AddToWhitelistParams {
-    project_id: u64,
-}
-
-#[derive(Serialize, SchemaType)]
-struct GetWhitelistParams {
-    project_id: u64,
-}
-
-#[derive(Serialize, SchemaType)]
-struct GetProjectParams {
-    project_id: u64,
-}
+type ProjectId = u64;
 
 // Custom error type
 
@@ -227,5 +267,5 @@ enum CustomContractError {
     WhitelistClosed,
     Unauthorized,
     ProjectAlreadyExists,
-    WhitelistAlreadyExists
+    WhitelistAlreadyExists,
 }

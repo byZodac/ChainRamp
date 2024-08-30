@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+/* eslint-disable react/prop-types */
+import { useState, useMemo } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -8,16 +9,16 @@ import {
   Button,
   Typography,
   Box,
-} from '@mui/material';
-import { styled } from '@mui/material/styles';
-import Select from 'react-select';
-import { countries } from 'countries-list';
+} from "@mui/material";
+import { styled } from "@mui/material/styles";
+import Select from "react-select";
+import { countries } from "countries-list";
 
 const StyledDialog = styled(Dialog)(({ theme }) => ({
-  '& .MuiDialog-paper': {
+  "& .MuiDialog-paper": {
     borderRadius: 16,
     padding: theme.spacing(2),
-    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+    boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
   },
 }));
 
@@ -26,19 +27,19 @@ const StyledDialogTitle = styled(DialogTitle)(({ theme }) => ({
   color: theme.palette.primary.contrastText,
   padding: theme.spacing(2),
   marginBottom: theme.spacing(2),
-  borderRadius: '8px 8px 0 0',
+  borderRadius: "8px 8px 0 0",
 }));
 
 const StyledTextField = styled(TextField)(({ theme }) => ({
   marginBottom: theme.spacing(2),
-  '& .MuiOutlinedInput-root': {
-    '& fieldset': {
+  "& .MuiOutlinedInput-root": {
+    "& fieldset": {
       borderColor: theme.palette.primary.light,
     },
-    '&:hover fieldset': {
+    "&:hover fieldset": {
       borderColor: theme.palette.primary.main,
     },
-    '&.Mui-focused fieldset': {
+    "&.Mui-focused fieldset": {
       borderColor: theme.palette.primary.dark,
     },
   },
@@ -51,24 +52,24 @@ const StyledButton = styled(Button)(({ theme }) => ({
 
 const StyledSelect = styled(Select)(({ theme }) => ({
   marginBottom: theme.spacing(2),
-  '& .react-select__control': {
+  "& .react-select__control": {
     minHeight: 56,
     borderColor: theme.palette.primary.light,
-    '&:hover': {
+    "&:hover": {
       borderColor: theme.palette.primary.main,
     },
   },
-  '& .react-select__control--is-focused': {
+  "& .react-select__control--is-focused": {
     borderColor: `${theme.palette.primary.dark} !important`,
     boxShadow: `0 0 0 1px ${theme.palette.primary.dark}`,
   },
-  '& .react-select__value-container': {
-    padding: '2px 14px',
+  "& .react-select__value-container": {
+    padding: "2px 14px",
   },
-  '& .react-select__placeholder': {
+  "& .react-select__placeholder": {
     color: theme.palette.text.secondary,
   },
-  '& .react-select__menu': {
+  "& .react-select__menu": {
     zIndex: 2,
   },
 }));
@@ -79,26 +80,29 @@ const FormField = styled(Box)(({ theme }) => ({
 
 const CreateProjectDialog = ({ open, onClose, onCreateProject }) => {
   const [newProject, setNewProject] = useState({
-    name: '',
-    description: '',
+    name: "",
+    description: "",
     location: null,
     maxWhitelistedAddresses: 0,
   });
 
-  const countryOptions = useMemo(() => 
-    Object.entries(countries).map(([code, country]) => ({
-      value: code,
-      label: country.name
-    })).sort((a, b) => a.label.localeCompare(b.label)),
+  const countryOptions = useMemo(
+    () =>
+      Object.entries(countries)
+        .map(([code, country]) => ({
+          value: code,
+          label: country.name,
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label)),
     []
   );
 
   const handleCreate = () => {
     onCreateProject({
       ...newProject,
-      location: newProject.location ? newProject.location.label : ''
+      location: newProject.location ? newProject.location.label : "",
     });
-    setNewProject({ name: '', description: '', location: null, maxWhitelistedAddresses: 0 });
+    // setNewProject({ name: '', description: '', location: null, maxWhitelistedAddresses: 0 });
   };
 
   return (
@@ -117,7 +121,9 @@ const CreateProjectDialog = ({ open, onClose, onCreateProject }) => {
               fullWidth
               variant="outlined"
               value={newProject.name}
-              onChange={(e) => setNewProject({ ...newProject, name: e.target.value })}
+              onChange={(e) =>
+                setNewProject({ ...newProject, name: e.target.value })
+              }
             />
           </FormField>
           <FormField>
@@ -128,14 +134,18 @@ const CreateProjectDialog = ({ open, onClose, onCreateProject }) => {
               multiline
               rows={3}
               value={newProject.description}
-              onChange={(e) => setNewProject({ ...newProject, description: e.target.value })}
+              onChange={(e) =>
+                setNewProject({ ...newProject, description: e.target.value })
+              }
             />
           </FormField>
           <FormField>
             <StyledSelect
               options={countryOptions}
               value={newProject.location}
-              onChange={(selectedOption) => setNewProject({ ...newProject, location: selectedOption })}
+              onChange={(selectedOption) =>
+                setNewProject({ ...newProject, location: selectedOption })
+              }
               placeholder="Select Country"
               classNamePrefix="react-select"
             />
@@ -147,7 +157,12 @@ const CreateProjectDialog = ({ open, onClose, onCreateProject }) => {
               fullWidth
               variant="outlined"
               value={newProject.maxWhitelistedAddresses}
-              onChange={(e) => setNewProject({ ...newProject, maxWhitelistedAddresses: parseInt(e.target.value) })}
+              onChange={(e) =>
+                setNewProject({
+                  ...newProject,
+                  maxWhitelistedAddresses: parseInt(e.target.value),
+                })
+              }
             />
           </FormField>
         </Box>
@@ -156,7 +171,11 @@ const CreateProjectDialog = ({ open, onClose, onCreateProject }) => {
         <StyledButton onClick={onClose} color="secondary" variant="outlined">
           Cancel
         </StyledButton>
-        <StyledButton onClick={handleCreate} color="primary" variant="contained">
+        <StyledButton
+          onClick={handleCreate}
+          color="primary"
+          variant="contained"
+        >
           Create Project
         </StyledButton>
       </DialogActions>

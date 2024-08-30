@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { detectConcordiumProvider } from '@concordium/browser-wallet-api-helpers';
-import { Button } from '@mui/material';
+import { useState, useEffect } from "react";
+import { detectConcordiumProvider } from "@concordium/browser-wallet-api-helpers";
+import { Button } from "@mui/material";
 
 const ConcordiumWalletConnect = () => {
   const [wallet, setWallet] = useState(null);
@@ -20,7 +20,7 @@ const ConcordiumWalletConnect = () => {
         const connectedAccount = await wallet.connect();
         setAccount(connectedAccount);
       } catch (error) {
-        console.error('Failed to connect wallet:', error);
+        console.error("Failed to connect wallet:", error);
       }
     }
   };
@@ -30,19 +30,19 @@ const ConcordiumWalletConnect = () => {
   };
 
   return (
-      <Button
-        sx={{ 
-          color: 'variant', 
-          backgroundColor: 'white', 
-          fontWeight: 'bold', 
-          '&:hover': {
-            backgroundColor: 'lightgray',
-          },
-        }} 
-        onClick={connect}
-      >
-        {account ? shortenAddress(account) : 'Connect Wallet'}
-      </Button>
+    <Button
+      sx={{
+        color: "variant",
+        backgroundColor: "white",
+        fontWeight: "bold",
+        "&:hover": {
+          backgroundColor: "lightgray",
+        },
+      }}
+      onClick={connect}
+    >
+      {account ? shortenAddress(account) : "Connect Wallet"}
+    </Button>
   );
 };
 

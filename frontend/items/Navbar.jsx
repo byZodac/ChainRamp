@@ -1,8 +1,8 @@
-import React from 'react';
-import { AppBar, Toolbar, Typography, Button } from '@mui/material';
-import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
-import ConcordiumWalletConnect from './WalletConnect';
-const Navbar = ({ onConnect, isConnected }) => {
+import { AppBar, Toolbar, Typography, Button } from "@mui/material";
+import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
+import { useWallet } from "../providers/WalletProvider";
+const Navbar = () => {
+  const { account, connect, isConnecting } = useWallet();
   return (
     <AppBar position="static">
       <Toolbar>
@@ -10,11 +10,21 @@ const Navbar = ({ onConnect, isConnected }) => {
         <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
           ChainRamp
         </Typography>
-        <ConcordiumWalletConnect />
+        {/* <ConcordiumWalletConnect /> */}
+        {!account ? (
+          <Button
+            onClick={connect}
+            disabled={isConnecting}
+            style={{ backgroundColor: "white" }}
+          >
+            Connect Wallet
+          </Button>
+        ) : (
+          <p>Connected</p>
+        )}
       </Toolbar>
     </AppBar>
   );
 };
 
 export default Navbar;
-
