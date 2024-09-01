@@ -249,7 +249,7 @@ const WhitelistProject = () => {
         parameters: {
           name: newProject?.name,
           description: newProject?.description,
-          location: "DK",
+          location: newProject?.location,
           max_whitelisted_addresses: newProject?.maxWhitelistedAddresses,
         },
         schema: moduleSchemaFromBase64(schemaToBase64),
@@ -276,6 +276,9 @@ const WhitelistProject = () => {
         toast.success("Campaign successfully created", {
           id: loading,
         });
+      setTimeout(() => {
+        getProject();
+      }, 10000);
       return transaction;
     } catch (error) {
       toast.error("Error creating campaign", {
@@ -289,19 +292,20 @@ const WhitelistProject = () => {
 
   const handleAuthorize = useCallback(
     async (location, projectId) => {
+      const locationSet = location.map((item) => item.value);
       try {
         const statement = [
           {
             type: "AttributeInSet",
             attributeTag: "nationality",
-            set: [location],
+            set: locationSet,
           },
-          // {
-          //   type: "AttributeInRange",
-          //   attributeTag: "dob",
-          //   lower: lower,
-          //   upper: upper,
-          // },
+          {
+            type: "AttributeInRange",
+            attributeTag: "dob",
+            lower: "18000101",
+            upper: "20060902",
+          },
         ];
 
         if (!account) {

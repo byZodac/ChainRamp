@@ -214,7 +214,15 @@ const ProjectDetailsDialog = ({
                 Description
               </Typography>
               <Typography>{project.description}</Typography>
-              <Typography>📍 Location: {project.location}</Typography>
+              <Typography>
+                📍 Location:{" "}
+                {project?.location?.map((item, index, array) => (
+                  <span key={item.value}>
+                    {item.label}
+                    {index < array.length - 1 && ", "}
+                  </span>
+                ))}
+              </Typography>
               <Typography>
                 🎟️ Whitelist Spots: {Number(project.num_addresses_whitelisted)}{" "}
                 / {Number(project.max_whitelisted_addresses)}

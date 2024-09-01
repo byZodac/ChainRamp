@@ -2,7 +2,7 @@
 
 concordium-client module deploy dist/chain_ramp.module.wasm.v1 --sender my_wallet.json --name chain_ramp_module --grpc-ip node.testnet.concordium.com
 
-concordium-client contract init supply_chain_tracker_module3 --sender my_wallet.json --contract supply_chain_tracker --name supply_chain_tracker_contract3 --energy 3000 --grpc-ip node.testnet.concordium.com
+concordium-client contract init chain_ramp_module2 --sender my_wallet.json --contract project_whitelist --name chain_ramp2 --energy 3000 --grpc-ip node.testnet.concordium.com
 
 
 concordium-client contract update chain-ramp --entrypoint create_project --energy 3000 --sender my_wallet.json --parameter-json params/create-params.json --schema dist/schema.bin --grpc-ip node.testnet.concordium.com

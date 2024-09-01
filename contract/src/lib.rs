@@ -8,7 +8,7 @@ use std::collections::BTreeMap;
 struct Project {
     name: String,
     description: String,
-    location: String,
+    location: Vec<Location>,
     max_whitelisted_addresses: u64,
     num_addresses_whitelisted: u64,
     creator: Address,
@@ -19,7 +19,7 @@ struct ProjectInfo {
     project_id: u64,
     name: String,
     description: String,
-    location: String,
+    location: Vec<Location>,
     max_whitelisted_addresses: u64,
     num_addresses_whitelisted: u64,
     creator: Address,
@@ -249,8 +249,14 @@ fn get_all_projects(
 struct CreateProjectParams {
     name: String,
     description: String,
-    location: String,
+    location: Vec<Location>,
     max_whitelisted_addresses: u64,
+}
+#[derive(Serialize, SchemaType, Clone)]
+
+struct Location {
+    value: String,
+    label: String,
 }
 
 type ProjectId = u64;

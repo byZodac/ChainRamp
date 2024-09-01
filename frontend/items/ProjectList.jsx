@@ -42,7 +42,13 @@ const ProjectList = ({ projects, onProjectClick }) => {
               </BoldTypography>
               <Box display="flex" alignItems="center" mt={1}>
                 <Typography variant="body2" color="text.secondary">
-                  📍 {project.location}
+                  📍{" "}
+                  {project?.location?.map((item, index, array) => (
+                    <span key={item.value}>
+                      {item.label}
+                      {index < array.length - 1 && ", "}
+                    </span>
+                  ))}
                 </Typography>
               </Box>
               <Box

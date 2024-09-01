@@ -13,6 +13,7 @@ import {
 import { styled } from "@mui/material/styles";
 import Select from "react-select";
 import { countries } from "countries-list";
+// import country from "world_countries_lists/data/countries/_combined/countries.json";
 
 const StyledDialog = styled(Dialog)(({ theme }) => ({
   "& .MuiDialog-paper": {
@@ -98,12 +99,16 @@ const CreateProjectDialog = ({ open, onClose, onCreateProject }) => {
   );
 
   const handleCreate = () => {
-    onCreateProject({
-      ...newProject,
-      location: newProject.location ? newProject.location.label : "",
-    });
+    onCreateProject(newProject);
+    // console.log({
+    //   ...newProject,
+    //   location: newProject.location ? newProject.location.label : "",
+    // });
+    // console.log(newProject);
     // setNewProject({ name: '', description: '', location: null, maxWhitelistedAddresses: 0 });
   };
+
+  console.log(countries);
 
   return (
     <StyledDialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -143,13 +148,16 @@ const CreateProjectDialog = ({ open, onClose, onCreateProject }) => {
             <StyledSelect
               options={countryOptions}
               value={newProject.location}
-              onChange={(selectedOption) =>
-                setNewProject({ ...newProject, location: selectedOption })
-              }
+              isMulti
+              onChange={(selectedOption) => {
+                setNewProject({ ...newProject, location: selectedOption });
+                console.log(selectedOption);
+              }}
               placeholder="Select Country"
               classNamePrefix="react-select"
             />
           </FormField>
+
           <FormField>
             <StyledTextField
               label="Max Whitelist Spots"
