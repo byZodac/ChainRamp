@@ -1,4 +1,3 @@
-# ChainRamp
 
 ![ChainRamp Homepage](https://github.com/byZodac/ChainRamp/blob/main/src/assets/chainramp.png)
 
