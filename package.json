@@ -8,7 +8,7 @@
     "build": "vite build",
     "build-verifier": "cargo build --manifest-path=verifier/Cargo.toml --release",
     "lint": "eslint src --ext js,jsx --report-unused-disable-directives --max-warnings 0",
-    "start": "./verifier/target/debug/chain-ramp-verifier --node http://node.testnet.concordium.com:20000 --port 8100 --log-level debug --public-folder public",
+    "start": "./verifier/target/release/chain-ramp-verifier --node http://node.testnet.concordium.com:20000 --port 8100 --log-level debug --public-folder public",
     "preview": "vite preview"
   },
   "dependencies": {
