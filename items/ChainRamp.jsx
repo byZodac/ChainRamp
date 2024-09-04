@@ -293,6 +293,7 @@ const WhitelistProject = () => {
   const handleAuthorize = useCallback(
     async (location, projectId) => {
       const locationSet = location.map((item) => item.value);
+      const loading = toast.loading("Authorizing...");
       try {
         const statement = [
           {
@@ -328,10 +329,15 @@ const WhitelistProject = () => {
         );
 
         if (newAuthToken) {
+          toast.success("Authorization Successfully", {
+            id: loading,
+          });
           await joinWhitelist(projectId);
           console.log(newAuthToken);
         } else {
-          toast.error("Failed to get authorization token");
+          toast.error("Failed to get authorization token", {
+            id: loading,
+          });
         }
       } catch (error) {
         console.error("Authorization failed:", error);
