@@ -24,7 +24,7 @@ Use the `get_all_projects` function to retrieve information on all projects, inc
 
 ## Useful Links
 
-- [Website](https://chainramp.netlify.app/) - Check out ChainRamp.
+- [Website](https://chainramp.netlify.app/) - Check out ChainRamp frontend.
 - [Demo Video](#) - Watch a quick demo of ChainRamp's features
 
 
